@@ -3,138 +3,102 @@ from sqlalchemy.orm import Session
 
 from repositories.attendance_repository import AttendanceRepository
 from repositories.device_repository import DeviceRepository
-from repositories.rfid_repository import RFIDRepository
+from services.student_service import StudentService
 from services.notification_service import NotificationService
 
-# =========================
-# CONFIGURATION
-# =========================
-SSID = "YOUR_WIFI"
-PASSWORD = "YOUR_PASSWORD"
 
-SERVER_URL = "https://your-server.com/attendance" #URL Name
-DEVICE_ID = "SCHOOL_GATE_1" 
+class AttendanceService:
+    """
+    Core backend service for handling attendance events.
+    """
 
-STATE_FILE = "attendance_state.json" #JSON file name
-OFFLINE_FILE = "offline_queue.json" #JSON file name
+    def __init__(self, db: Session):
+        self.db = db
+        self.attendance_repo = AttendanceRepository(db)
+        self.device_repo = DeviceRepository(db)
+        self.student_service = StudentService(db)
+        self.notification_service = NotificationService()
 
-# =========================
-# LOAD / SAVE STATE
-# =========================
-def load_json(filename, default):
-    try:
-        with open(filename, "r") as f:
-            return ujson.load(f)
-    except:
-        return default
+    # --------------------------------------------------
+    # MAIN ENTRY POINT
+    # --------------------------------------------------
 
-def save_json(filename, data):
-    with open(filename, "w") as f:
-        ujson.dump(data, f)
+    def process_event(self, event: dict):
+        """
+        Process a raw attendance event received from ESP32.
+        """
 
-last_status = load_json(STATE_FILE, {})
-offline_queue = load_json(OFFLINE_FILE, [])
+        uid = event.get("uid")
+        event_type = event.get("status")
+        device_id = event.get("device_id")
+        timestamp = event.get("timestamp")
 
-# =========================
-# WIFI CONNECTION
-# =========================
-def connect_wifi():
-    wlan = network.WLAN(network.STA_IF)
-    wlan.active(True)
+        # -------------------------------
+        # 1️⃣ Validate basic payload
+        # -------------------------------
+        if not uid or event_type not in ("IN", "OUT") or not device_id or not timestamp:
+            raise ValueError("Invalid attendance payload")
 
-    if not wlan.isconnected():
-        print("Connecting to WiFi...")
-        wlan.connect(SSID, PASSWORD)
-        while not wlan.isconnected():
-            time.sleep(1)
+        # -------------------------------
+        # 2️⃣ Verify device
+        # -------------------------------
+        device = self.device_repo.get_by_device_id(device_id)
+        if not device or not device.is_active:
+            raise PermissionError("Unauthorized or inactive device")
 
-    print("WiFi Connected:", wlan.ifconfig())
+        # -------------------------------
+        # 3️⃣ Resolve student
+        # -------------------------------
+        student = self.student_service.resolve_student_by_uid(uid)
+        if not student:
+            raise ValueError("Invalid or inactive RFID card")
 
-connect_wifi()
+        # -------------------------------
+        # 4️⃣ Convert timestamp
+        # -------------------------------
+        event_time = datetime.fromtimestamp(timestamp)
 
-# =========================
-# RFID SETUP
-# =========================
-spi = SPI(
-    2,
-    baudrate=2500000,
-    polarity=0,
-    phase=0,
-    sck=Pin(18),
-    mosi=Pin(23),
-    miso=Pin(19)
-)
+        # -------------------------------
+        # 5️⃣ Prevent duplicate events
+        # -------------------------------
+        if self.attendance_repo.event_exists(
+            uid=uid,
+            device_id=device.id,
+            event_time=event_time,
+            event_type=event_type,
+        ):
+            # Duplicate replay from offline ESP32 → ignore safely
+            return {"status": "duplicate_ignored"}
 
-rfid = MFRC522(spi=spi, gpioRst=22, gpioCs=5)
+        # -------------------------------
+        # 6️⃣ Save attendance event
+        # -------------------------------
+        attendance_event = self.attendance_repo.create_event(
+            uid=uid,
+            student_id=student.id,
+            device_id=device.id,
+            event_type=event_type,
+            event_timestamp=event_time,
+        )
 
-print("RFID Attendance System Ready")
+        # -------------------------------
+        # 7️⃣ Trigger notification
+        # -------------------------------
+        parents = self.student_service.get_whatsapp_enabled_parents(student.id)
 
-# =========================
-# RESEND OFFLINE DATA
-# =========================
-def resend_offline_data():
-    global offline_queue
+        self.notification_service.notify_parents(
+            parents=parents,
+            student_name=student.full_name,
+            event_type=event_type,
+            event_time=event_time,
+            device_name=device.location_name,
+        )
 
-    if not offline_queue:
-        return
-
-    print("Resending offline records...")
-
-    remaining = []
-
-    for record in offline_queue:
-        try:
-            r = urequests.post(SERVER_URL, json=record)
-            r.close()
-            print("Resent:", record)
-        except:
-            remaining.append(record)
-
-    offline_queue = remaining
-    save_json(OFFLINE_FILE, offline_queue)
-
-# =========================
-# MAIN LOOP
-# =========================
-while True:
-    (status, _) = rfid.request(rfid.REQIDL)
-
-    if status == rfid.OK:
-        (status, uid) = rfid.anticoll()
-
-        if status == rfid.OK:
-            card_uid = "-".join("{:02X}".format(x) for x in uid)
-
-            # -------- IN / OUT LOGIC --------
-            if card_uid not in last_status:
-                current_status = "IN"
-            elif last_status[card_uid] == "IN":
-                current_status = "OUT"
-            else:
-                current_status = "IN"
-
-            last_status[card_uid] = current_status
-            save_json(STATE_FILE, last_status)
-
-            print("Card:", card_uid, "Status:", current_status)
-
-            payload = {
-                "uid": card_uid,
-                "status": current_status,
-                "device_id": DEVICE_ID,
-                "timestamp": time.time()
-            }
-
-            try:
-                r = urequests.post(SERVER_URL, json=payload)
-                r.close()
-                print("Sent to server")
-
-                resend_offline_data()
-
-            except:
-                print("Offline – saving locally")
-                offline_queue.append(payload)
-                save_json(OFFLINE_FILE, offline_queue)
-
-            time.sleep(3)
+        # -------------------------------
+        # 8️⃣ Return success
+        # -------------------------------
+        return {
+            "status": "success",
+            "event_id": attendance_event.id,
+            "student_id": student.id,
+        }
