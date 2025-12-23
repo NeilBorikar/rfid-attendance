@@ -1,0 +1,6 @@
+from repositories.student_repository import StudentRepository
+from repositories.parent_repository import ParentRepository
+from repositories.rfid_repository import RFIDRepository
+from repositories.device_repository import DeviceRepository
+from repositories.attendance_repository import AttendanceRepository
+from repositories.notification_repository import NotificationRepository
