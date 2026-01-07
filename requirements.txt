@@ -1,25 +1,18 @@
-# Core framework
 fastapi==0.110.0
 uvicorn[standard]==0.29.0
 
-# Environment & settings
 python-dotenv==1.0.1
+
 pydantic==2.6.4
 pydantic-settings==2.2.1
 
-# Database (MongoDB)
 pymongo==4.6.3
 dnspython==2.6.1
 
-# Notifications
 twilio==9.0.5
 
-# HTTP client (ESP ↔ backend, internal calls)
 httpx==0.27.0
-
-# Logging
 loguru==0.7.2
 
-# Testing (safe to keep)
 pytest==8.1.1
 pytest-asyncio==0.23.6
