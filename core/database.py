@@ -1,6 +1,7 @@
 from pymongo import MongoClient
 from pymongo.database import Database
 
+from app import settings
 from core.config import Settings
 
 
@@ -19,8 +20,10 @@ class MongoDB:
         """
         if cls._client is None:
             cls._client = MongoClient(
-                Settings.MONGO_URI,
-                serverSelectionTimeoutMS=5000
+                settings.MONGO_URI,
+                serverSelectionTimeoutMS=5000,
+                tls=True,
+                tlsAllowInvalidCertificates=False
             )
 
             # Ping to ensure connection works
