@@ -1,8 +1,7 @@
 from pymongo import MongoClient
 from pymongo.database import Database
 
-from app import settings
-from core.config import Settings
+from app.settings import settings   # ✅ FIXED (import instance only)
 
 
 class MongoDB:
@@ -29,7 +28,8 @@ class MongoDB:
             # Ping to ensure connection works
             cls._client.admin.command("ping")
 
-            cls._database = cls._client[Settings.MONGO_DB_NAME]
+            # ✅ FIX: use loaded settings instance
+            cls._database = cls._client[settings.MONGO_DB_NAME]
 
         return cls._database
 
