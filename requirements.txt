@@ -4,7 +4,7 @@ python-dotenv
 sqlalchemy
 alembic
 psycopg2-binary
-pydantic
+pydantic-settings==2.1.0
 twilio
 celery
 redis
