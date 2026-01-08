@@ -2,8 +2,11 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    # MongoDB
+    # App
     APP_NAME: str = "RFID Attendance Backend"
+    DEBUG: bool = False
+
+    # MongoDB
     MONGO_URI: str
     MONGO_DB_NAME: str
 
@@ -14,7 +17,8 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_file=".env",
-        env_file_encoding="utf-8"
+        env_file_encoding="utf-8",
+        extra="ignore"  # VERY IMPORTANT for Railway
     )
 
 
