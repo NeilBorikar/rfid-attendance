@@ -21,8 +21,7 @@ class MongoDB:
             cls._client = MongoClient(
                 settings.MONGO_URI,
                 serverSelectionTimeoutMS=5000,
-                tls=True,
-                tlsAllowInvalidCertificates=False
+                
             )
 
             # Ping to ensure connection works

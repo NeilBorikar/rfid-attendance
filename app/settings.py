@@ -3,6 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     # MongoDB
+    APP_NAME: str = "RFID Attendance Backend"
     MONGO_URI: str
     MONGO_DB_NAME: str
 
