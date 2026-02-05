@@ -41,7 +41,13 @@ class DeviceService:
 
         self.device_repo.insert_one(device_record)
 
-        return device_record
+            # 🔥 Return JSON-safe response ONLY
+        return {
+            "device_id": device_record["device_id"],
+            "location_name": device_record["location_name"],
+            "is_active": device_record["is_active"]
+        }
+
 
     # =========================
     # ESP CONFIG FETCH
