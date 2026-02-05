@@ -8,7 +8,7 @@ from schemas.device_schema import (
     DeviceConfigUpdate
 )
 
-router = APIRouter(prefix="/devices", tags=["Devices"])
+router = APIRouter( tags=["Devices"])
 
 device_service = DeviceService()
 
