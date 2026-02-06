@@ -27,8 +27,8 @@ class DeviceConfigResponse(DeviceBase):
     Configuration sent to ESP device.
     ESP pulls this periodically.
     """
-    wifi_ssid: str
-    wifi_password: str
+    wifi_ssid: Optional[str] = None
+    wifi_password: Optional[str] = None
 
 
 # =========================

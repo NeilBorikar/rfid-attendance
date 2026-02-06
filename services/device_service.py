@@ -66,7 +66,7 @@ class DeviceService:
 
         if not device.get("is_active", False):
             raise ValueError("Device is inactive")
-
+        device.pop("_id", None)
         self.device_repo.update_last_seen(device_id)
 
         return DeviceConfigResponse(**device)
