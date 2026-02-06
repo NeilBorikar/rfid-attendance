@@ -92,11 +92,15 @@ class DeviceService:
 
         update_dict = update_data.dict(exclude_unset=True)
         if not update_dict:
-            return device  # nothing to update
+            device.pop("_id", None)
+            return DeviceConfigResponse(**device) # nothing to update
 
         self.device_repo.update_device_config(
             device_id,
             update_dict
         )
 
-        return self.device_repo.get_device_config(device_id)
+        updated_device = self.device_repo.get_device_config(device_id)
+        updated_device.pop("_id", None)
+
+        return DeviceConfigResponse(**updated_device)
