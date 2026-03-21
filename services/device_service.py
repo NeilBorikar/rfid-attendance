@@ -103,4 +103,4 @@ class DeviceService:
         updated_device = self.device_repo.get_device_config(device_id)
         updated_device.pop("_id", None)
 
-        return DeviceConfigResponse(**updated_device)
+        return DeviceConfigResponse(**updated_device) 
