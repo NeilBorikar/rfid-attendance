@@ -4,7 +4,7 @@ from repositories import (
     RFIDRepository
 )
 
-from schemas.student_schema import StudentOut
+from schemas.student_schema import StudentOut, StudentCreate
 from utils.id_utils import normalize_uid
 
 
@@ -14,6 +14,20 @@ class StudentService:
         self.student_repo = StudentRepository()
         self.parent_repo = ParentRepository()
         self.rfid_repo = RFIDRepository()
+
+    def register_student(self, student_data: StudentCreate) -> StudentOut:
+        """
+        Register a new student in the system.
+        """
+        # Check if student already exists
+        if self.student_repo.get_by_student_id(student_data.student_id):
+            raise ValueError(f"Student with ID {student_data.student_id} already exists")
+
+        # Create student document
+        student_dict = student_data.model_dump()
+        self.student_repo.insert_one(student_dict)
+
+        return StudentOut(**student_dict)
 
     def resolve_student_by_uid(self, uid: str):
         """

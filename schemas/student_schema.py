@@ -7,7 +7,8 @@ class StudentBase(BaseModel):
     full_name: str
     grade: str
     section: Optional[str] = None
-    is_active: bool = True
+class StudentCreate(StudentBase):
+    pass
 
 
 class StudentOut(StudentBase):
