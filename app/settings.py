@@ -5,6 +5,8 @@ class Settings(BaseSettings):
     # App
     APP_NAME: str = "RFID Attendance Backend"
     DEBUG: bool = False
+    SECRET_KEY: str = "supersecretkey_change_in_prod"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
 
     # MongoDB
     MONGO_URI: str

@@ -16,3 +16,7 @@ loguru==0.7.2
 
 pytest==8.1.1
 pytest-asyncio==0.23.6
+
+passlib[bcrypt]
+pyjwt
+python-multipart

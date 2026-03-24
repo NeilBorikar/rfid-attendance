@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Depends
 from services.student_service import StudentService
 from schemas.student_schema import StudentCreate, StudentOut
+from api.auth_api import get_current_admin
 
 router = APIRouter(tags=["Students"])
 student_service = StudentService()
@@ -9,7 +10,8 @@ student_service = StudentService()
     "/",
     status_code=status.HTTP_201_CREATED,
     response_model=StudentOut,
-    summary="Register a new student"
+    summary="Register a new student",
+    dependencies=[Depends(get_current_admin)]
 )
 def register_student(student: StudentCreate):
     """
