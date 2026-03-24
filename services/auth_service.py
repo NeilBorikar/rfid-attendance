@@ -6,7 +6,7 @@ from core.database import MongoDB
 from schemas.user_schema import UserCreate, UserInDB, UserOut
 from bson import ObjectId
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt_sha256", "bcrypt"], deprecated="auto")
 ALGORITHM = "HS256"
 
 class AuthService:
@@ -15,6 +15,7 @@ class AuthService:
         self.collection = self.db["users"]
 
     def get_password_hash(self, password: str) -> str:
+        print(f"DEBUG: Hashing password of length {len(password)}")
         return pwd_context.hash(password)
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
