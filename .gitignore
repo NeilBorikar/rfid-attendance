@@ -48,3 +48,4 @@ alembic/versions/__pycache__/
 test_hash.py
 test_render.py
 test_local.py
+venv_test/
