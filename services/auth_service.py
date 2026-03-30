@@ -6,7 +6,7 @@ from core.database import MongoDB
 from schemas.user_schema import UserCreate, UserInDB, UserOut
 from bson import ObjectId
 
-pwd_context = CryptContext(schemes=["bcrypt_sha256", "bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt", "bcrypt_sha256"], deprecated="auto")
 ALGORITHM = "HS256"
 
 class AuthService:

@@ -41,3 +41,10 @@ Thumbs.db
 # Migrations cache
 # =========================
 alembic/versions/__pycache__/
+
+# =========================
+# Testing Scripts
+# =========================
+test_hash.py
+test_render.py
+test_local.py
