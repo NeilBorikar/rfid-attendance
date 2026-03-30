@@ -58,3 +58,40 @@ class StudentService:
         Fetch parents who have WhatsApp notifications enabled.
         """
         return self.parent_repo.get_whatsapp_enabled(student_id)
+
+    def get_all_students(self) -> list[StudentOut]:
+        students = self.student_repo.find_many({})
+        return [StudentOut(**student) for student in students]
+
+    def delete_student(self, student_id: str) -> bool:
+        try:
+            result = self.student_repo.collection.delete_one({"student_id": student_id})
+            # Also deactivate their RFIDs
+            self.rfid_repo.collection.update_many({"student_id": student_id}, {"$set": {"is_active": False}})
+            return result.deleted_count > 0
+        except Exception:
+            return False
+
+    def assign_rfid(self, student_id: str, uid: str) -> bool:
+        normalized_uid = normalize_uid(uid)
+        
+        # Check if active anywhere
+        existing_card = self.rfid_repo.get_active_by_uid(normalized_uid)
+        if existing_card and existing_card["student_id"] != student_id:
+            raise ValueError(f"RFID card is already assigned to student {existing_card['student_id']}")
+            
+        # Deactivate old cards for this student
+        self.rfid_repo.collection.update_many(
+            {"student_id": student_id},
+            {"$set": {"is_active": False}}
+        )
+        
+        # Assign new
+        from datetime import datetime, timezone
+        self.rfid_repo.insert_one({
+            "uid": normalized_uid,
+            "student_id": student_id,
+            "is_active": True,
+            "assigned_at": datetime.now(timezone.utc)
+        })
+        return True
