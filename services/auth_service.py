@@ -67,3 +67,22 @@ class AuthService:
             name=user["name"],
             role=user["role"]
         )
+
+    def get_users_by_role(self, role: str) -> list[UserOut]:
+        users = self.collection.find({"role": role})
+        return [
+            UserOut(
+                id=str(user["_id"]),
+                email=user["email"],
+                name=user["name"],
+                role=user["role"]
+            )
+            for user in users
+        ]
+
+    def delete_user(self, user_id: str) -> bool:
+        try:
+            result = self.collection.delete_one({"_id": ObjectId(user_id)})
+            return result.deleted_count > 0
+        except Exception:
+            return False

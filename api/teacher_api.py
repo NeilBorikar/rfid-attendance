@@ -16,3 +16,20 @@ def register_teacher(user: UserCreate, current_admin: dict = Depends(get_current
         return auth_service.create_user(user)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/", response_model=list[UserOut], summary="Get All Teachers")
+def get_all_teachers(current_admin: dict = Depends(get_current_admin)):
+    """
+    Retrieve all registered teachers. Only an admin can perform this action.
+    """
+    return auth_service.get_users_by_role("teacher")
+
+@router.delete("/{teacher_id}", summary="Delete Teacher")
+def delete_teacher(teacher_id: str, current_admin: dict = Depends(get_current_admin)):
+    """
+    Delete a teacher by ID. Only an admin can perform this action.
+    """
+    success = auth_service.delete_user(teacher_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Teacher not found or invalid ID")
+    return {"detail": "Teacher deleted successfully"}
