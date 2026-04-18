@@ -75,6 +75,10 @@ class SMSRequest(BaseModel):
 def send_sms(student_id: str, request: SMSRequest):
     try:
         results = notification_service.send_manual_sms(student_id, request.message)
+        if not results:
+            raise HTTPException(status_code=404, detail="No phone numbers found for this student.")
         return {"detail": "SMS sent successfully", "results": results}
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
