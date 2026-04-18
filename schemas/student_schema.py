@@ -7,6 +7,7 @@ class StudentBase(BaseModel):
     full_name: str
     grade: str
     section: Optional[str] = None
+    parent_phone: Optional[str] = None
 class StudentCreate(StudentBase):
     pass
 

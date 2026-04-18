@@ -27,6 +27,14 @@ class StudentService:
         student_dict = student_data.model_dump()
         self.student_repo.insert_one(student_dict)
 
+        # Create parent document if phone is provided
+        if student_data.parent_phone:
+            self.parent_repo.insert_one({
+                "student_id": student_data.student_id,
+                "phone_number": student_data.parent_phone,
+                "whatsapp_enabled": True  # Enable by default for now
+            })
+
         return StudentOut(**student_dict)
 
     def resolve_student_by_uid(self, uid: str):
@@ -68,6 +76,8 @@ class StudentService:
             result = self.student_repo.collection.delete_one({"student_id": student_id})
             # Also deactivate their RFIDs
             self.rfid_repo.collection.update_many({"student_id": student_id}, {"$set": {"is_active": False}})
+            # Delete their parent profiles
+            self.parent_repo.collection.delete_many({"student_id": student_id})
             return result.deleted_count > 0
         except Exception:
             return False
